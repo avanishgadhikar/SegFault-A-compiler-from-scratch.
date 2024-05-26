@@ -5,6 +5,7 @@
 
 //enumerating all types of tokens to be handled.
 typedef enum {
+    BEGINNING,
     INT,
     KEYWORD,
     SEPERATOR,
@@ -30,6 +31,9 @@ void print_token(Token token){
     }
     if(token.type == END_OF_TOKENS){
         printf("END_OF_TOKENS\n");
+    }
+    if(token.type == BEGINNING){
+        printf("BEGINNING\n");
     }
     printf("TOKEN VALUE: '%s'\n", token.value);
 }

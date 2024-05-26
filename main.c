@@ -2,8 +2,11 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include<string.h>
+
 #include "lexerf.h"
 #include "parserf.h"
+#include "codegeneratorf.h"
+
 /*
 To Run the file:
 gcc -c main.c
@@ -31,7 +34,21 @@ int main(int argc, char* argv[]){
     while(tokens[token_index].type != END_OF_TOKENS){
         print_token(tokens[token_index++]);
     }
-    print_token(tokens[token_index]);
-    Token* t = parser(tokens);
+    print_token(tokens[token_index]); //to print END OF TOKENS.
+
+    Node* test = parser(tokens);
+    printf("TREE:\n");
+    //generating an assembly code and running the subsequent file.
+    generate_code(test);
+    FILE* assembly_file = fopen("generated.asm", "r");
+    if(!assembly_file){
+        printf("ERROR!\n");
+        exit(1);
+    }
+    //executing the buildasm in the terminal.
+    if(system("./buildasm.sh")){
+        printf("ERROR\n");
+        exit(1);
+    }
     return 0;
 }
