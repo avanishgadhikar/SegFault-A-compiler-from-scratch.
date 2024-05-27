@@ -7,4 +7,4 @@ GOAL of project: This a completely learning based project. To build a compiler f
 4. Also an implementation of the modulo operator.
 
 
-Current progress: A partially functional parser and lexer that can identify exit calls and build the parser tree accordingly
+Current progress: Currently can compile an exit syscall perfectly. More support to be added soon!
