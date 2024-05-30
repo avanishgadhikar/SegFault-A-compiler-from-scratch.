@@ -1,5 +1,6 @@
-#include <stdlib.h>
-#include<stdio.h>
+#ifndef GENERATOR_H_
+#define GENERATOR_H_
 
-void traverse_tree(Node* node, int is_left, FILE* file);
-int generate_code(Node* root);
+int generate_code(Node *root);
+
+#endif

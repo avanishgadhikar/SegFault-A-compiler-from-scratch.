@@ -1,134 +1,236 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
-#include <string.h> 
 
-//enumerating all types of tokens to be handled.
-typedef enum {
+typedef enum
+{
     BEGINNING,
     INT,
     KEYWORD,
-    SEPERATOR,
+    SEPARATOR,
+    OPERATOR,
+    IDENTIFIER,
     END_OF_TOKENS,
 } TokenType;
 
-//struct to store values an tokens.
-typedef struct {
+typedef struct
+{
     TokenType type;
     char *value;
 } Token;
 
-void print_token(Token token){
-    printf("TOKEN TYPE: ");
-    if(token.type == INT){
+void print_token(Token token)
+{
+    printf("TOKEN VALUE: ");
+    printf("'");
+    for (int i = 0; token.value[i] != '\0'; i++)
+    {
+        printf("%c", token.value[i]);
+    }
+    printf("'");
+
+    switch (token.type)
+    {
+        printf("TOKEN TYPE: ");
+    case INT:
         printf("INT\n");
-    }
-    if(token.type == KEYWORD){
+        break;
+    case KEYWORD:
         printf("KEYWORD\n");
-    }
-    if(token.type == SEPERATOR){
-        printf("SEPERATOR\n");
-    }
-    if(token.type == END_OF_TOKENS){
-        printf("END_OF_TOKENS\n");
-    }
-    if(token.type == BEGINNING){
+        break;
+    case SEPARATOR:
+        printf("SEPARATOR\n");
+        break;
+    case OPERATOR:
+        printf("OPERATOR\n");
+        break;
+    case IDENTIFIER:
+        printf("IDENTIFIER\n");
+        break;
+    case END_OF_TOKENS:
+        printf(" END OF TOKENS\n");
+        break;
+    case BEGINNING:
         printf("BEGINNING\n");
+        break;
     }
-    printf("TOKEN VALUE: '%s'\n", token.value);
 }
 
-//function to identify if the token is a number(INT) and return the value of the number.
-Token* generate_number(char current, FILE* file){
-    Token* token = malloc(sizeof(Token));
+Token *generate_number(char *current, int *current_index)
+{
+    Token *token = malloc(sizeof(Token));
     token->type = INT;
-    char *value = malloc(sizeof(char)*8);
+    char *value = malloc(sizeof(char) * 8);
     int value_index = 0;
-    while(isdigit(current) && current != EOF){
-        value[value_index++] = current;
-        current = fgetc(file);
+    while (isdigit(current[*current_index]) && current[*current_index] != '\0')
+    {
+        if (!isdigit(current[*current_index]))
+        {
+            break;
+        }
+        value[value_index] = current[*current_index];
+        value_index++;
+        *current_index += 1;
     }
     value[value_index] = '\0';
-    fseek(file, -1, SEEK_CUR);
     token->value = value;
     return token;
 }
 
-//function to identify and return if a token is a keyword(KEYWORD) and return the type of keyword.
-Token* generate_keyword(char current, FILE* file){
-    Token* token = malloc(sizeof(Token));
-    char* keyword = malloc(sizeof(char)*16);
+Token *generate_keyword_or_identifier(char *current, int *current_index)
+{
+    Token *token = malloc(sizeof(Token));
+    char *keyword = malloc(sizeof(char) * 8);
     int keyword_index = 0;
-    while(isalpha(current) && current != EOF){
-        keyword[keyword_index++] = current;
-        current = fgetc(file);
+    while (isalpha(current[*current_index]) && current[*current_index] != '\0')
+    {
+        keyword[keyword_index] = current[*current_index];
+        keyword_index++;
+        *current_index += 1;
     }
     keyword[keyword_index] = '\0';
-    fseek(file, -1, SEEK_CUR);
-    //further keyword support can be added here.
-    //Currently handles exit.
-    if(!strcmp(keyword, "exit")){
+    if (strcmp(keyword, "exit") == 0)
+    {
         token->type = KEYWORD;
-        token->value ="EXIT";
+        token->value = "EXIT";
+    }
+    else if (strcmp(keyword, "int") == 0)
+    {
+        token->type = KEYWORD;
+        token->value = "INT";
+    }
+    else
+    {
+        token->type = IDENTIFIER;
+        token->value = keyword;
     }
     return token;
 }
 
-//function to generate a token if a seperator is found.
-Token* generate_seperator(char current){
-    Token* token = malloc(sizeof(Token));
-    token->value = malloc(sizeof(char)*2);
-    token->value[0] = current;
+Token *generate_separator_or_operator(char *current, int *current_index, TokenType type)
+{
+    Token *token = malloc(sizeof(Token));
+    token->value = malloc(sizeof(char) * 2);
+    token->value[0] = current[*current_index];
     token->value[1] = '\0';
-    token->type = SEPERATOR;
+    token->type = type;
     return token;
 }
-
-
 
 size_t tokens_index;
 
-Token* lexer(FILE* file){
-    char current;
-    current = fgetc(file);
-    Token* tokens = malloc(sizeof(Token)*1024);
+Token *lexer(FILE *file)
+{
+    int length;
+    char *current = 0;
+
+    fseek(file, 0, SEEK_END);
+    length = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    current = malloc(sizeof(char) * length);
+    fread(current, 1, length, file);
+
+    fclose(file);
+
+    current[length + 1] = '\0';
+    int current_index = 0;
+
+    int number_of_tokens = 12;
+    int tokens_size = 0;
+    Token *tokens = malloc(sizeof(Token) * number_of_tokens);
     tokens_index = 0;
-    while(current != EOF){
-        Token* token = malloc(sizeof(Token));
-        if(current == '(' || current == ';' || current == ')'){
-            token = generate_seperator(current);
-            printf("TOKEN VALUE: %s\n", token->value);
-            printf("TOKEN TYPE: %d\n", token->type);
-            tokens[tokens_index++] = *token;
-        }else if(isdigit(current)){
-            token = generate_number(current, file);
-            printf("TOKEN VALUE: %s\n", token->value);
-            printf("TOKEN TYPE: %d\n", token->type);
-            tokens[tokens_index++] = *token;
-        }else if(isalpha(current)){
-            token = generate_keyword(current, file);
-            printf("TOKEN VALUE: %s\n", token->value);
-            printf("TOKEN TYPE: %d\n", token->type);
-            tokens[tokens_index++] = *token;
+
+    while (current[current_index] != '\0')
+    {
+        Token *token = malloc(sizeof(Token));
+        tokens_size++;
+        if (tokens_size > number_of_tokens)
+        {
+            number_of_tokens *= 1.5;
+            tokens = realloc(tokens, sizeof(Token) * number_of_tokens);
         }
-        current = fgetc(file);
+        if (current[current_index] == ';')
+        {
+            token = generate_separator_or_operator(current, &current_index, SEPARATOR);
+            tokens[tokens_index] = *token;
+            tokens_index++;
+        }
+        else if (current[current_index] == '(')
+        {
+            token = generate_separator_or_operator(current, &current_index, SEPARATOR);
+            printf("CURRENT %s\n", token->value);
+            tokens[tokens_index] = *token;
+            tokens_index++;
+        }
+        else if (current[current_index] == ')')
+        {
+            token = generate_separator_or_operator(current, &current_index, SEPARATOR);
+            tokens[tokens_index] = *token;
+            tokens_index++;
+        }
+        else if (current[current_index] == '{')
+        {
+            token = generate_separator_or_operator(current, &current_index, SEPARATOR);
+            tokens[tokens_index] = *token;
+            tokens_index++;
+        }
+        else if (current[current_index] == '}')
+        {
+            token = generate_separator_or_operator(current, &current_index, SEPARATOR);
+            tokens[tokens_index] = *token;
+            tokens_index++;
+        }
+        else if (current[current_index] == '=')
+        {
+            token = generate_separator_or_operator(current, &current_index, OPERATOR);
+            tokens[tokens_index] = *token;
+            tokens_index++;
+        }
+        else if (current[current_index] == '+')
+        {
+            token = generate_separator_or_operator(current, &current_index, OPERATOR);
+            tokens[tokens_index] = *token;
+            tokens_index++;
+        }
+        else if (current[current_index] == '-')
+        {
+            token = generate_separator_or_operator(current, &current_index, OPERATOR);
+            tokens[tokens_index] = *token;
+            tokens_index++;
+        }
+        else if (current[current_index] == '*')
+        {
+            token = generate_separator_or_operator(current, &current_index, OPERATOR);
+            tokens[tokens_index] = *token;
+            tokens_index++;
+        }
+        else if (current[current_index] == '/')
+        {
+            token = generate_separator_or_operator(current, &current_index, OPERATOR);
+            tokens[tokens_index] = *token;
+            tokens_index++;
+        }
+        else if (isdigit(current[current_index]))
+        {
+            token = generate_number(current, &current_index);
+            tokens[tokens_index] = *token;
+            tokens_index++;
+            current_index--;
+        }
+        else if (isalpha(current[current_index]))
+        {
+            token = generate_keyword_or_identifier(current, &current_index);
+            tokens[tokens_index] = *token;
+            tokens_index++;
+            current_index--;
+        }
+
         free(token);
+        current_index++;
     }
     tokens[tokens_index].value = '\0';
     tokens[tokens_index].type = END_OF_TOKENS;
     return tokens;
 }
-/*
-int main(){
-    FILE* file = fopen("test.did", "r");
-    Token* tokens = lexer(file);
-    int token_index = 0;
-    printf("Lexing done!\n\n");
-    while(tokens[token_index].type != END_OF_TOKENS){
-        //printf("TOKEN VALUE: %s\n", tokens[token_index].value);
-        //printf("TOKEN TYPE: %d\n", tokens[token_index++].type);
-        print_token(tokens[token_index++]);
-    }
-    print_token(tokens[token_index]);
-    return 0;
-}*/

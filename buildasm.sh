@@ -1,2 +1,4 @@
-nasm -f arm64 generated.asm -o generated.o
+nasm -f elf64 generated.asm -o generated.o
 ld generated.o -o generated
+./generated
+echo $?

@@ -1,1 +1,10 @@
-exit(12);
+{
+{
+    int trying = 1;
+}
+}
+
+int x = 5;
+int y = 4;
+int z = 4;
+exit(z * y / y + x);
