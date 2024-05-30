@@ -9,6 +9,8 @@ typedef enum
     SEPARATOR,
     OPERATOR,
     IDENTIFIER,
+    STRING,
+    COMP,
     END_OF_TOKENS,
 } TokenType;
 
@@ -16,6 +18,7 @@ typedef struct
 {
     TokenType type;
     char *value;
+    size_t line_num;
 } Token;
 
 void print_token(Token token);

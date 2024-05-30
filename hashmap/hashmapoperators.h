@@ -3,15 +3,16 @@
 
 #define SIZE 20
 
-struct DataItem {
-   char *data;   
+struct DataItem
+{
+   char *data;
    char key;
 };
 
 int hashCode(char key);
 struct DataItem *search(int key);
 void insert(int key, char *data);
-struct DataItem* delete_(struct DataItem* item);
+struct DataItem *delete(struct DataItem *item);
 void display();
 
 #endif
