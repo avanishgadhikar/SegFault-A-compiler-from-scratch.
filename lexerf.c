@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 
+// an enum to keep track of all the possibilities in lexical analysis.
 typedef enum
 {
     BEGINNING,
@@ -16,6 +17,7 @@ typedef enum
     END_OF_TOKENS,
 } TokenType;
 
+// a struct to keep hold of the tokens that the lexer will generate.
 typedef struct
 {
     TokenType type;
@@ -23,8 +25,11 @@ typedef struct
     size_t line_num;
 } Token;
 
+//keeping track of which line of the file the token lies on.
 size_t line_number = 0;
 
+
+//a function to print the token.
 void print_token(Token token)
 {
     printf("TOKEN VALUE: ");
@@ -68,68 +73,76 @@ void print_token(Token token)
     }
 }
 
-Token *generate_number(char *current, int *current_index)
-{
+//a function to generate tokens for numbers, uses the isdigit function.
+Token *generate_number(char current, FILE *file){
     Token *token = malloc(sizeof(Token));
-    token->line_num = malloc(sizeof(size_t));
     token->line_num = line_number;
     token->type = INT;
-    char *value = malloc(sizeof(char) * 8);
+    char *value = malloc(sizeof(char)*8);
     int value_index = 0;
-    while (isdigit(current[*current_index]) && current[*current_index] != '\0')
-    {
-        if (!isdigit(current[*current_index]))
-        {
-            break;
-        }
-        value[value_index] = current[*current_index];
-        value_index++;
-        *current_index += 1;
+    while(isdigit(current) && current != EOF){
+
+        value[value_index++] = current;
+        current = fgetc(file);
     }
     value[value_index] = '\0';
     token->value = value;
+    // set the file pointer back 1 position.
+    fseek(file, -1, SEEK_CUR);
     return token;
 }
 
-Token *generate_keyword_or_identifier(char *current, int *current_index)
-{
+//a function to generate tokens for keywords or identifiers, uses the isalpha function.
+Token *generate_keyword_or_identifier(char current, FILE *file){
     Token *token = malloc(sizeof(Token));
-    token->line_num = malloc(sizeof(size_t));
     token->line_num = line_number;
     char *keyword = malloc(sizeof(char) * 8);
     int keyword_index = 0;
-    while (isalpha(current[*current_index]) && current[*current_index] != '\0')
+    while (isalpha(current) && (current != '\0' &&  current != EOF))
     {
-        keyword[keyword_index] = current[*current_index];
-        keyword_index++;
-        *current_index += 1;
+        keyword[keyword_index++] = current;
+        current = fgetc(file);
     }
+    //set the file pointer back 1 position.
+    fseek(file, -1, SEEK_CUR);
     keyword[keyword_index] = '\0';
+
+    // token for exit syscall.
     if (strcmp(keyword, "exit") == 0)
     {
         token->type = KEYWORD;
         token->value = "EXIT";
     }
+
+    //token for int keyword.
     else if (strcmp(keyword, "int") == 0)
     {
         token->type = KEYWORD;
         token->value = "INT";
     }
+
+    //token for conditional keyword.
     else if (strcmp(keyword, "if") == 0)
     {
         token->type = KEYWORD;
         token->value = "IF";
     }
+
+    //token for loop keywords.
     else if (strcmp(keyword, "while") == 0)
     {
         token->type = KEYWORD;
         token->value = "WHILE";
     }
+
+    //token for writing to console.
     else if (strcmp(keyword, "write") == 0)
     {
         token->type = KEYWORD;
         token->value = "WRITE";
     }
+
+    //comparator tokens.
     else if (strcmp(keyword, "eq") == 0)
     {
         token->type = COMP;
@@ -150,6 +163,8 @@ Token *generate_keyword_or_identifier(char *current, int *current_index)
         token->type = COMP;
         token->value = "GREATER";
     }
+
+    //identifier tokens.
     else
     {
         token->type = IDENTIFIER;
@@ -158,63 +173,46 @@ Token *generate_keyword_or_identifier(char *current, int *current_index)
     return token;
 }
 
-Token *generate_string_token(char *current, int *current_index)
-{
-    Token *token = malloc(sizeof(Token));
-    token->line_num = malloc(sizeof(size_t));
+// function to generate tokens for strings.
+Token *generate_string_token(char current, FILE *file){
+    Token* token = malloc(sizeof(Token));
     token->line_num = line_number;
     char *value = malloc(sizeof(char) * 64);
     int value_index = 0;
-    *current_index += 1;
-    while (current[*current_index] != '"')
-    {
-        value[value_index] = current[*current_index];
-        value_index++;
-        *current_index += 1;
+    current = fgetc(file);
+    while(current != '"' && current != EOF && current != '\0'){
+        value[value_index++] = current;
+        current = fgetc(file);
     }
     value[value_index] = '\0';
-    token->type = STRING;
     token->value = value;
+    token->type = STRING;
     return token;
 }
 
-Token *generate_separator_or_operator(char *current, int *current_index, TokenType type)
-{
+//function to generate tokens for seperators and operators.
+Token *generate_separator_or_operator(char current, TokenType type){
     Token *token = malloc(sizeof(Token));
     token->value = malloc(sizeof(char) * 2);
-    token->value[0] = current[*current_index];
+    token->value[0] = current;
     token->value[1] = '\0';
-    token->line_num = malloc(sizeof(size_t));
     token->line_num = line_number;
     token->type = type;
     return token;
 }
 
+//keeping track of which token we are at.
 size_t tokens_index;
 
+//the lexer function using all the above auxilliary functions.
 Token *lexer(FILE *file)
-{
-    int length;
-    char *current = 0;
-
-    fseek(file, 0, SEEK_END);
-    length = ftell(file);
-    fseek(file, 0, SEEK_SET);
-
-    current = malloc(sizeof(char) * length);
-    fread(current, 1, length, file);
-
-    fclose(file);
-
-    current[length] = '\0';
-    int current_index = 0;
-
+{    
     int number_of_tokens = 12;
     int tokens_size = 0;
     Token *tokens = malloc(sizeof(Token) * number_of_tokens);
     tokens_index = 0;
-
-    while (current[current_index] != '\0')
+    char current = fgetc(file);
+    while (current != '\0' && current != EOF)
     {
         Token *token = malloc(sizeof(Token));
         tokens_size++;
@@ -223,104 +221,41 @@ Token *lexer(FILE *file)
             number_of_tokens *= 1.5;
             tokens = realloc(tokens, sizeof(Token) * number_of_tokens);
         }
-        if (current[current_index] == ';')
+        if (current == ';' || current == ',' || current == '(' || current == ')' || current == '{' || current == '}')
         {
-            token = generate_separator_or_operator(current, &current_index, SEPARATOR);
+            token = generate_separator_or_operator(current, SEPARATOR);
+            tokens[tokens_index] = *token;
+            tokens_index++;
+        }else if (current == '=' || current == '+' || current == '-' || current == '*' || current == '/' || current == '%')
+        {   
+            token = generate_separator_or_operator(current, OPERATOR);
             tokens[tokens_index] = *token;
             tokens_index++;
         }
-        else if (current[current_index] == ',')
+        else if (current == '"')
         {
-            token = generate_separator_or_operator(current, &current_index, SEPARATOR);
+            token = generate_string_token(current, file);
             tokens[tokens_index] = *token;
             tokens_index++;
         }
-        else if (current[current_index] == '(')
-        {
-            token = generate_separator_or_operator(current, &current_index, SEPARATOR);
+        else if (isdigit(current))
+        {   
+            token = generate_number(current, file);
             tokens[tokens_index] = *token;
             tokens_index++;
         }
-        else if (current[current_index] == ')')
-        {
-            token = generate_separator_or_operator(current, &current_index, SEPARATOR);
+        else if (isalpha(current))
+        {   
+            token = generate_keyword_or_identifier(current, file);
             tokens[tokens_index] = *token;
             tokens_index++;
         }
-        else if (current[current_index] == '{')
-        {
-            token = generate_separator_or_operator(current, &current_index, SEPARATOR);
-            tokens[tokens_index] = *token;
-            tokens_index++;
-        }
-        else if (current[current_index] == '}')
-        {
-            token = generate_separator_or_operator(current, &current_index, SEPARATOR);
-            tokens[tokens_index] = *token;
-            tokens_index++;
-        }
-        else if (current[current_index] == '=')
-        {
-            token = generate_separator_or_operator(current, &current_index, OPERATOR);
-            tokens[tokens_index] = *token;
-            tokens_index++;
-        }
-        else if (current[current_index] == '+')
-        {
-            token = generate_separator_or_operator(current, &current_index, OPERATOR);
-            tokens[tokens_index] = *token;
-            tokens_index++;
-        }
-        else if (current[current_index] == '-')
-        {
-            token = generate_separator_or_operator(current, &current_index, OPERATOR);
-            tokens[tokens_index] = *token;
-            tokens_index++;
-        }
-        else if (current[current_index] == '*')
-        {
-            token = generate_separator_or_operator(current, &current_index, OPERATOR);
-            tokens[tokens_index] = *token;
-            tokens_index++;
-        }
-        else if (current[current_index] == '/')
-        {
-            token = generate_separator_or_operator(current, &current_index, OPERATOR);
-            tokens[tokens_index] = *token;
-            tokens_index++;
-        }
-        else if (current[current_index] == '%')
-        {
-            token = generate_separator_or_operator(current, &current_index, OPERATOR);
-            tokens[tokens_index] = *token;
-            tokens_index++;
-        }
-        else if (current[current_index] == '"')
-        {
-            token = generate_string_token(current, &current_index);
-            tokens[tokens_index] = *token;
-            tokens_index++;
-        }
-        else if (isdigit(current[current_index]))
-        {
-            token = generate_number(current, &current_index);
-            tokens[tokens_index] = *token;
-            tokens_index++;
-            current_index--;
-        }
-        else if (isalpha(current[current_index]))
-        {
-            token = generate_keyword_or_identifier(current, &current_index);
-            tokens[tokens_index] = *token;
-            tokens_index++;
-            current_index--;
-        }
-        else if (current[current_index] == '\n')
+        else if (current == '\n')
         {
             line_number += 1;
         }
         free(token);
-        current_index++;
+        current = fgetc(file);
     }
     tokens[tokens_index].value = '\0';
     tokens[tokens_index].type = END_OF_TOKENS;
