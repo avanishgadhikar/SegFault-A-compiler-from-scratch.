@@ -33,14 +33,14 @@ int main(int argc, char *argv[])
     FILE *assembly_file = fopen("generated.asm", "r");
     if (!assembly_file)
     {
-        printf("ERRROR");
+        printf("ERROR");
         exit(1);
     }
     char *nasm = malloc(sizeof(char) * 64);
     char *gcc = malloc(sizeof(char) * 64);
-    sprintf(nasm, "nasm -f elf64 generated.asm -o generated.o", argv[2], argv[2]);
-    sprintf(gcc, "gcc generated.o -o %s -lc -no-pie", argv[2], argv[2]);
+    sprintf(nasm, "nasm -f elf64 generated.asm -o generated.o");
+    sprintf(gcc, "gcc generated.o -o %s -lc -no-pie -z noexecstack", argv[2]);
     system(nasm);
     system(gcc);
-    printf("FINISHED\n");
+    //printf("FINISHED\n");
 }

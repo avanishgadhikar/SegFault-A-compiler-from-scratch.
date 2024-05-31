@@ -47,14 +47,10 @@ void print_tree(Node *node, int indent, char *identifier)
     }
     for (int i = 0; i < indent; i++)
     {
-        printf(" ");
+        printf("\t");
     }
     printf("%s -> ", identifier);
-    for (size_t i = 0; node->value[i] != '\0'; i++)
-    {
-        printf("%c", node->value[i]);
-    }
-    printf("\n");
+    printf("%s\n", node->value);
     print_tree(node->left, indent + 1, "left");
     print_tree(node->right, indent + 1, "right");
 }
@@ -76,6 +72,7 @@ void print_error(char *error_type, size_t line_number)
     exit(1);
 }
 
+//function to create a node in the parse tree from an expression.
 Node *parse_expression(Token *current_token, Node *current_node)
 {
     Node *expr_node = malloc(sizeof(Node));
@@ -184,6 +181,8 @@ Node *handle_exit_syscall(Node *root, Token *current_token, Node *current)
     current->right = exit_node;
     current = exit_node;
     current_token++;
+
+    // eg. "exit"(...); has been dealt with so far.
     if (current_token->type == END_OF_TOKENS)
     {
         print_error("Invalid Syntax on OPEN", current_token->line_num);
@@ -198,6 +197,7 @@ Node *handle_exit_syscall(Node *root, Token *current_token, Node *current)
         {
             print_error("Invalid Syntax on INT", current_token->line_num);
         }
+        // eg. "exit("...) has been dealt with so far.
         if (current_token->type == INT || current_token->type == IDENTIFIER)
         {
             current_token++;
@@ -216,7 +216,7 @@ Node *handle_exit_syscall(Node *root, Token *current_token, Node *current)
             current_token++;
             if (current_token->type == END_OF_TOKENS)
             {
-                print_error("Invalid Syntax on cLOSE", current_token->line_num);
+                print_error("Invalid Syntax on CLOSE", current_token->line_num);
             }
             if (strcmp(current_token->value, ")") == 0 && current_token->type == SEPARATOR && current_token->type != END_OF_TOKENS)
             {
@@ -348,7 +348,7 @@ Node *create_variable_reusage(Token *current_token, Node *current)
                 }
                 else
                 {
-                    printf("ERROR: Unexpected Token\n", current_token->line_num);
+                    printf("ERROR: Unexpected Token, Line: %zu\n", current_token->line_num);
                     exit(1);
                 }
                 current_token++;
@@ -938,9 +938,9 @@ Node *parser(Token *tokens)
 
     Node *current = root;
 
-    Node *open_curly = malloc(sizeof(Node));
-    // Node *close_curly = malloc(sizeof(Node));
 
+    // to deal with the scopes.
+    Node *open_curly = malloc(sizeof(Node));
     curly_stack *stack = malloc(sizeof(curly_stack));
 
     while (current_token->type != END_OF_TOKENS)
@@ -952,9 +952,9 @@ Node *parser(Token *tokens)
         switch (current_token->type)
         {
         case KEYWORD:
-            if (strcmp(current_token->value, "EXIT") == 0)
+            if (!strcmp(current_token->value, "EXIT"))
             {
-                current = handle_exit_syscall(root, current_token, current);
+                current = handle_exit_syscall(root, current_token, current);//*current.
             }
             else if (strcmp(current_token->value, "INT") == 0)
             {

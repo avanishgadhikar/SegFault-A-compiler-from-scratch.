@@ -638,7 +638,6 @@ int generate_code(Node *root, char *filename)
     insert('/', "div");
     FILE *file = fopen(filename, "w");
     assert(file != NULL && "FILE COULD NOT BE OPENED\n");
-    printf("HERHE\n");
 
     assert(hashmap_create(initial_size, &hashmap) == 0 && "ERROR: Could not create hashmap\n");
 
