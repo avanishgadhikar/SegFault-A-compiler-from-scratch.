@@ -9,12 +9,17 @@ GOAL of project: This a completely learning based project. To build a compiler f
 Current progress: Can compile a fizzbuzz code given in the examples!
 
 Dependencies: nasm, gcc
-Build Instructions: 
+Build Instructions part-I: 
 1. gcc main.c parserf.c lexerf.c codegeneratorf.c ./hashmap/hashmapoperators.c -c
 2. gcc main.o parserf.o lexerf.o codegeneratorf.o hashmapoperators.o -o demo
 3. ./demo examples/fizzbuzz.did output
 4. ./output
 
+Build Instructions part-II:
+1. ./build.sh
+2. ./build examples/fizzbuzz.did output
+3. ./output
+   
 PS: This could not have been possible without CobbCoding's video series on the compiler from scratch: https://www.youtube.com/watch?v=-4RmhDy0A2s&list=PLRnI_2_ZWhtA_ZAzEa8uJF8wgGF0HjjEz&ab_channel=CobbCoding
 
 Also yes, a lot of segmentation faults were dealt with in this, hence the name :p.
