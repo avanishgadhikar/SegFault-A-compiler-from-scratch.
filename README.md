@@ -9,6 +9,7 @@ GOAL of project: This a completely learning based project. To build a compiler f
 Current progress: Can compile a fizzbuzz code given in the examples!
 
 Dependencies: nasm, gcc
+
 Build Instructions part-I: 
 1. gcc main.c parserf.c lexerf.c codegeneratorf.c ./hashmap/hashmapoperators.c -c
 2. gcc main.o parserf.o lexerf.o codegeneratorf.o hashmapoperators.o -o demo
